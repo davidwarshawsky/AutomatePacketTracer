@@ -13,6 +13,7 @@ Create RIP class to allow for the option rather than automatic configuration
 Create OSPF class to allow for OSPF configuration
 Create ability to save router as a csv file to be read in later.
 
+Go to this link and press run to use it: https://repl.it/@DavidWarshawsky/AutomatePacketTracer
 
 There are 5 options
 N for new router
