@@ -1,5 +1,5 @@
 from router import Router
-from interfaces import *
+from interface import *
 from protocols import *
 commands = ["en", "conf t", "no ip domain-lookup"]
 

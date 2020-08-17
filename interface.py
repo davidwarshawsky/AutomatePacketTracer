@@ -35,7 +35,7 @@ class Interface(object):
     @property
     def port(self) -> str:
         # A list of valid regex for the first part of the port.
-        return ' '.join(self._port)
+        return ' '.jo:in(self._port)
 
     @property
     def cidr(self) -> str:
