@@ -1,5 +1,5 @@
 # interface  = input("Ex: g2/2 fa2/5 | Please enter interface: ")
-# net_id = input("Ex: 192.168.0.0/25 | Please enter network id for %s with a subnet: " % interface)
+# net_id = input("Ex: 192.168.0.0/25 | Please enter networks id for %s with a subnet: " % interface)
 # address = input("Ex: 192.168.1.2 | Please enter IP Address for int %s: " % interface)
 import re
 import socket
@@ -9,28 +9,18 @@ class Interface(object):
     Interface works with fast ethernet and gigabit ethernet ports.
     TO DO: Provide support for serial interfaces.
     """
-    # Make sure you can change the interface.
-    init_commands: [str]   = [None,"no switchport"]
-    config_commands: [str] = [None]
-    # Stop the port interface from going down
-    # Get out of the interface
-    exit_commands = ["no shut","exit"]
-    commands: [str] = []
-    # Example: fa 0/1 | g 0/2
-    _port: [str]     = None
-    port: str        = None
-    # Example: 192.168.1.0/24
-    # Consists of network,prefix
-    _cidr: [str]     = None
-    cidr: str        = None
-    # The actual ip address assigned to the interface.
-    # Example: [192,168,1,1]
-    _ip_address: [str] = None
-    ip_address:  str   = None
-    # Example 255.255.255.0
-    netmask: str       = None
-
     def __init__(self,port:str,cidr:str,ip_address:str):
+        # Make sure you can change the interface.
+        self.init_commands: [str] = [None, "no switchport"]
+        self.config_commands: [str] = [None]
+        # Stop the port interface from going down
+        # Get out of the interface
+        self.exit_commands = ["no shut", "exit"]
+        self._port: [str] = None
+        self._cidr: [str] = None
+        self._ip_address: [str] = None
+        # Example 255.255.255.0
+        self.netmask: str = None
         self.port = port
         self.cidr = cidr
         self.ip_address = ip_address
@@ -82,22 +72,17 @@ class Interface(object):
         if len(cidr_split) != 2:
             raise ValueError(f'cidr <{cidr}> does not contain "/" or is invalid')
         cidr_split = [value.strip() for value in cidr_split]
-        print(f'CIDR Setter cidr_split: {cidr_split}')
         valid_subnet_address = '\d{,3}.\d{,3}.\d{,3}.\d{,3}'
         if not bool(re.match(valid_subnet_address,cidr_split[0])):
             raise ValueError(f'<{cidr_split[0]}> is not a valid subnet address')
         if '/' in cidr_split[1]:
             cidr_split[1] = cidr_split[1].replace("/","")
         prefix = int(cidr_split[1])
-        print(f'CIDR Setter prefix: {prefix}')
         if prefix < 0 or prefix > 32:
             raise ValueError(f"<{cidr_split[1]}> is not a valid subnet mask")
         network,netmask = self.cidr_to_netmask('/'.join(cidr_split))
         self.netmask = netmask
-        print('<'+network+'>')
-        print('<'+str(prefix)+'>')
         self._cidr = [network,str(prefix)]
-        print(f'CIDR Setter self._cidr: {self._cidr}')
         if self._ip_address != None:
             self.config_setup()
 
@@ -130,4 +115,7 @@ class Interface(object):
 
     def config_setup(self):
         self.config_commands = ["ip address %s %s" % (self.ip_address, self.netmask)]
+
+    def __str__(self):
+        return ','.join([self.port,self.cidr,self.ip_address])
 
