@@ -1,5 +1,5 @@
 import pytest
-from interfaces import Interface
+from interface import Interface
 
 @pytest.fixture(scope='module')
 def default_interface():
