@@ -1,10 +1,10 @@
-from router import Router
+from src.router import Router
 import os
 class Network(object):
 
     def __init__(self,name):
         routers: [Router] = None
-        self.path: str = 'networks'
+        self.path: str = '../networks'
         # Set the network name.
         self.name = name
         self.path = self.name
@@ -18,7 +18,7 @@ class Network(object):
     def path(self,path):
         # If this is the first time setting the path, create a new
         # directory for the network.
-        start_path = 'networks'
+        start_path = '../networks'
         if self._path == 'networks':
             self._path = os.path.join(self._path,path)
             if not os.path.isdir(self._path):
