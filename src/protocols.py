@@ -1,4 +1,4 @@
-from interface import Interface
+from src.interface import Interface
 #     def configure_rip(self):
 #         for addr in self.get_net_addrs():
 #             self.rip_commands.append("networks %s" % addr)
