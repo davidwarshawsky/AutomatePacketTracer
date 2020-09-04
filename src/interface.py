@@ -27,6 +27,12 @@ class Interface(object):
         self.init_setup()
         self.config_setup()
 
+    def __eq__(self, other):
+        if not isinstance(other, Interface):
+            # don't attempt to compare against unrelated types
+            return NotImplementedError
+        return str(self) == str(other)
+
     @property
     def commands(self) -> [str]:
         commands = self.init_commands + self.config_commands + self.exit_commands
@@ -35,7 +41,7 @@ class Interface(object):
     @property
     def port(self) -> str:
         # A list of valid regex for the first part of the port.
-        return ' '.jo:in(self._port)
+        return ' '.join(self._port)
 
     @property
     def cidr(self) -> str:

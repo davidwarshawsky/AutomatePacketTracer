@@ -1,4 +1,5 @@
 import os
+print(os.getcwd())
 from interface import Interface
 from protocols import RIP2
 
