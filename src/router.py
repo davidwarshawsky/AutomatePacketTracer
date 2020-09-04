@@ -1,7 +1,5 @@
 import os
-print(os.getcwd())
-from interface import Interface
-from protocols import RIP2
+from src.interface import Interface
 
 
 class IterRouter(type):
@@ -25,12 +23,22 @@ class Router(metaclass=IterRouter):
         self.interfaces: [Interface] = []
         self.activated_protocols: {str: bool} = {'RIP1': False, 'RIP2': False, 'OSPF1': False, 'OSPF2': False}
 
+    def __eq__(self, other):
+        if not isinstance(other, Router):
+            # don't attempt to compare against unrelated types
+            return NotImplementedError
+        return self.__dict__ == other.__dict__
+
     def add_interface(self,interface:Interface):
         # If the interface already exists, raise a ValueError.
         if len(self.interfaces) != 0:
-            if sum([str(interface) == str(current_interface) for current_interface in self.interfaces]) != 0:
-                raise ValueError('This interface already exists')
-        self.interfaces.append(interface)
+            print("More than interface existed before you added this new interface")
+            double_list = [interface == current_interface for current_interface in self.interfaces]
+            print("Does your new interface match any existing ones?: ", double_list)
+            if sum(double_list) != 0:
+                print("You did an oopsie")
+                raise ValueError
+        self.interfaces = self.interfaces + [interface]
 
     def activate_protocol(self,protocol):
         "ONLY ADD PROTOCOLS AT THE END of the program!"
