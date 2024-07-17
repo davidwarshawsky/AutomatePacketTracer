@@ -3,9 +3,8 @@ import tkinter as tk
 router = None  # Global variable to store the router
 
 def start_move(event):
-    global last_x, last_y
-    last_x = event.x
-    last_y = event.y
+    router['last_x'] = event.x
+    router['last_y'] = event.y
 
 def stop_move(event):
     pass
@@ -13,11 +12,12 @@ def stop_move(event):
 def show_hostname_entry(event):
     if router['entry'] is None:
         router['entry'] = tk.Entry(root)
-        router['entry'].insert(0, router['hostname'])
-        router['entry'].place(x=router['x'] + 25, y=router['y'] + 60, anchor="center")
-        router['entry'].focus_set()
-        router['entry'].bind("<Return>", lambda event: update_hostname())
-        router['entry'].bind("<FocusOut>", lambda event: update_hostname())
+    router['entry'].insert(0, router['hostname'])
+    router['entry'].place(x=router['x'] + 25, y=router['y'] + 60, anchor="center")
+    router['entry'].focus_set()
+    router['entry'].bind("<Return>", lambda event: update_hostname())
+    router['entry'].bind("<FocusOut>", lambda event: update_hostname())
+    router['entry'].bind("<Escape>", lambda event: router['entry'].destroy())  # Add binding for Escape key
 
 def create_router():
     global router
@@ -30,22 +30,27 @@ def create_router():
         'text': canvas.create_text(x + 50, y + 50, text="Router", font=("Arial", 12), fill="black"),
         'entry': None,
         'hostname': 'Router',
+        # Store the current position of the router on the canvas
         'x': x,
-        'y': y
+        'y': y,
+        # used to keep track of previous position of router on canvas to update router's canvas position
+        'last_x': None, 
+        'last_y': None
     }
     canvas.tag_bind(router['oval'], "<ButtonPress-1>", start_move)
     canvas.tag_bind(router['oval'], "<B1-Motion>", move_router)
-    canvas.tag_bind(router['oval'], "<ButtonRelease-1>", stop_move)
+    # canvas.tag_bind(router['oval'], "<ButtonRelease-1>", stop_move)
     canvas.tag_bind(router['oval'], "<Double-Button-1>", show_hostname_entry)
 
 def move_router(event):
-    global last_x, last_y
-    dx = event.x - last_x
-    dy = event.y - last_y
+    dx = event.x - router['last_x']
+    dy = event.y - router['last_y']
     canvas.move(router['oval'], dx, dy)
     canvas.move(router['text'], dx, dy)
-    last_x = event.x
-    last_y = event.y
+    router['x'] += dx
+    router['y'] += dy
+    router['last_x'] = event.x
+    router['last_y'] = event.y
 
 def adjust_button_position(event):
     canvas_width = canvas.winfo_width()
