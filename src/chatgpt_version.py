@@ -5,14 +5,15 @@ def center_bottom_menu_position(event=None, obj=None, canvas=None):
     canvas_width = canvas.winfo_width()
     canvas_height = canvas.winfo_height()
     obj.place(x=canvas_width // 2, y=canvas_height - 20, anchor="s")
-    root.title(f"Application Size: {canvas_width}x{canvas_height}")  # Update the window title with the size
+    root.title(f"Network Simulator")
 
 class ElementGroup:
-    def __init__(self, canvas, root, initial_x, initial_y, elements=None):
+    def __init__(self, canvas, root, initial_x, initial_y, elements=None, connections=None):
         self.canvas = canvas
         self.root = root
         self.initial_x = initial_x
         self.initial_y = initial_y
+        self.connections = connections if connections else []
         if elements:
             self.elements = elements
         self.options_menu = None  # Initialize options_menu as None
@@ -28,17 +29,28 @@ class ElementGroup:
             self.elements[shape]['last_x'] = event.x
             self.elements[shape]['last_y'] = event.y
 
-    def move(self,event):
+    def move(self, event):
         if all(['obj' in self.elements[shape] for shape in self.elements]) is False:
             raise ValueError("All elements must have an 'obj' key BEFORE initiating move")
         for shape in self.elements:
             dx = event.x - self.elements[shape]['last_x']
             dy = event.y - self.elements[shape]['last_y']
-            canvas.move(self.elements[shape]['obj'], dx, dy)
+            self.canvas.move(self.elements[shape]['obj'], dx, dy)
             self.elements[shape]['x'] += dx
             self.elements[shape]['y'] += dy
             self.elements[shape]['last_x'] = event.x
             self.elements[shape]['last_y'] = event.y
+        self.update_connections()
+
+    def update_connections(self):
+        for connection in self.connections:
+            self.canvas.coords(
+                connection['line'],
+                connection['router1'].elements['oval']['x'] + 50,
+                connection['router1'].elements['oval']['y'] + 50,
+                connection['router2'].elements['oval']['x'] + 50,
+                connection['router2'].elements['oval']['y'] + 50
+            )
 
     def bind_events(self):
         if all(['obj' in self.elements[shape] for shape in self.elements]) is False:
@@ -46,7 +58,7 @@ class ElementGroup:
         for shape in self.elements:
             self.canvas.tag_bind(self.elements[shape]['obj'], "<ButtonPress-1>", lambda event: self.start_move(event))
             self.canvas.tag_bind(self.elements[shape]['obj'], "<B1-Motion>", lambda event: self.move(event))
-            self.canvas.tag_bind(self.elements[shape]['obj'], "<ButtonPress-2>", lambda event: create_input_fields(event,self.canvas, self.root))
+            self.canvas.tag_bind(self.elements[shape]['obj'], "<ButtonPress-2>", lambda event: create_input_fields(event, self.canvas, self.root))
 
     def create_elements(self):
         for shape in self.elements:
@@ -56,7 +68,7 @@ class ElementGroup:
                 current_shape['y'] = self.initial_y + current_shape['offset_y']
                 current_shape['last_x'] = current_shape['x']
                 current_shape['last_y'] = current_shape['y']
-            
+
             if 'text' in shape:
                 current_shape['obj'] = self.canvas.create_text(
                     current_shape['x'],
@@ -101,8 +113,8 @@ class ElementGroup:
         print(self.stored_data)
 
 
-def create_input_fields(event,canvas, root):
-    inputs = { 
+def create_input_fields(event, canvas, root):
+    inputs = {
         "input_field_ip_address": {
             "text": "IP Address",
             "font": ("Arial", 12),
@@ -128,14 +140,14 @@ def create_input_fields(event,canvas, root):
         entry.pack()
         inputs[field]["entry"] = entry
     # create a button to save the input fields
-    save_button = tk.Button(window, text="Save", command=lambda: save_input_fields(inputs,window))
+    save_button = tk.Button(window, text="Save", command=lambda: save_input_fields(inputs, window))
     save_button.pack()
 
 
-def save_input_fields(inputs,window):
+def save_input_fields(inputs, window):
     for field in inputs:
         value = inputs[field]["entry"].get()
-        if not re.match(inputs[field]["regex"],value):
+        if not re.match(inputs[field]["regex"], value):
             print(f"{value} is not a valid {field}")
             return
         print(f"{field}: {inputs[field]['entry'].get()}")
@@ -143,51 +155,91 @@ def save_input_fields(inputs,window):
     window.destroy()
 
 
-def create_router(canvas, root, initial_x, initial_y):
-    shapes = {
-        'oval':{
-            'offset_x': 0,
-            'offset_y': 0,
-            'width': 100,
-            'height': 100,
-            'outline': "black",
-            'fill': "white",
-        },
-        'text_name':{
-            'offset_x': 50,
-            'offset_y': 50,
-            'text': "Router",
-            'font': ("Arial", 12),
-            'fill': "black",
-        },
-        'text_hostname':{
-            'offset_x': 50,
-            'offset_y': 105,
-            'text': "Hostname",
-            'font': ("Arial", 10),
-            'fill': "black",
-        }
-    }
-    router = ElementGroup(canvas, root, initial_x, initial_y, shapes)
-    router.create_elements()
-    router.bind_events()
+class Network:
+    def __init__(self, canvas, root):
+        self.canvas = canvas
+        self.root = root
+        self.routers = []  # List to store ElementGroup instances
+        self.selected_routers = []  # List to store selected routers for connection
 
+    def create_router(self, initial_x, initial_y):
+        shapes = {
+            'oval': {
+                'offset_x': 0,
+                'offset_y': 0,
+                'width': 100,
+                'height': 100,
+                'outline': "black",
+                'fill': "gray",
+            },
+            'text_name': {
+                'offset_x': 50,
+                'offset_y': 50,
+                'text': "Router",
+                'font': ("Arial", 12),
+                'fill': "black",
+            },
+            'text_hostname': {
+                'offset_x': 50,
+                'offset_y': 105,
+                'text': "Hostname",
+                'font': ("Arial", 10),
+                'fill': "black",
+            }
+        }
+        router = ElementGroup(self.canvas, self.root, initial_x, initial_y, shapes)
+        router.create_elements()
+        router.bind_events()
+        self.routers.append(router)  # Add the router to the list
+
+    def select_router(self, router):
+        if router in self.selected_routers:
+            self.selected_routers.remove(router)
+        else:
+            self.selected_routers.append(router)
+
+        if len(self.selected_routers) == 2:
+            self.create_connection(self.selected_routers[0], self.selected_routers[1])
+            self.selected_routers = []
+
+    def create_connection(self, router1, router2):
+        line = self.canvas.create_line(
+            router1.elements['oval']['x'] + 50,
+            router1.elements['oval']['y'] + 50,
+            router2.elements['oval']['x'] + 50,
+            router2.elements['oval']['y'] + 50,
+            fill="red"
+        )
+        connection = {
+            'router1': router1,
+            'router2': router2,
+            'line': line
+        }
+        router1.connections.append(connection)
+        router2.connections.append(connection)
 
 if __name__ == '__main__':
+    root = tk.Tk()
 
-  root = tk.Tk()
+    canvas = tk.Canvas(root, width=800, height=600)
+    x, y = 100, 100
 
-  canvas = tk.Canvas(root, width=800, height=600)
-  x, y = 100, 100  
+    canvas.pack(fill=tk.BOTH, expand=True)
+    root.bind("<Configure>", lambda event: center_bottom_menu_position(button_frame, canvas))
+    button_frame = tk.Frame(root)
+    network = Network(canvas, root)  # Create a Network instance
+    button = tk.Button(button_frame, text="Create Router", command=lambda: network.create_router(x, y))  # Use the Network instance
+    connection_button = tk.Button(button_frame, text="New Connection", command=lambda: start_new_connection(network), bg="gray", fg="red")
 
-  canvas.pack(fill=tk.BOTH, expand=True)
-  root.bind("<Configure>", lambda event: center_bottom_menu_position(button_frame, canvas))
-  button_frame = tk.Frame(root)
-  button = tk.Button(button_frame, text="Create Router", command=lambda: create_router(canvas, root, x, y))
-  button_frame.pack(side=tk.BOTTOM, pady=10)
+    button.pack(side=tk.LEFT)
+    connection_button.pack(side=tk.LEFT)
 
-  button.pack()
+    root.bind("<Configure>", lambda event: center_bottom_menu_position(event, button_frame, canvas))
 
-  root.bind("<Configure>", lambda event: center_bottom_menu_position(event, button_frame, canvas))
-  
-  root.mainloop()
+    def start_new_connection(network):
+        for router in network.routers:
+            for shape in router.elements:
+                if 'obj' in router.elements[shape]:
+                    canvas.tag_bind(router.elements[shape]['obj'], "<ButtonPress-1>", lambda event, router=router: network.select_router(router))
+
+    root.mainloop()
