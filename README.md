@@ -10,6 +10,8 @@ This project is a network simulator built with Python's Tkinter library. It allo
 - Edit properties of network elements
 - Save and load configurations
 
+![Automate Packet Tracer](./automate-pt.png)
+
 ## Getting Started
 
 ### Prerequisites
